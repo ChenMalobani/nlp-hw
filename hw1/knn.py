@@ -15,9 +15,11 @@ def knn(vector, matrix, k=10):
 
     nearest_idx = []
 
-    ### YOUR CODE HERE
-    raise NotImplementedError
-    ### END YOUR CODE
+    dot_prod = np.dot(matrix, vector)
+    norm_rows = np.linalg.norm(matrix, axis=1)
+    norm_vector = np.linalg.norm(vector)
+    cosine_sim = dot_prod / (norm_rows * norm_vector)
+    nearest_idx = np.argsort(-cosine_sim)[0:k]
     return nearest_idx
 
 def test_knn():
@@ -28,9 +30,11 @@ def test_knn():
     your tests be graded.
     """
     print "Running your tests..."
-    ### YOUR CODE HERE
-    raise NotImplementedError
-    ### END YOUR CODE
+    matrix = [[1,2,3,4],[0,0,1,0],[1,4,2,0]]
+    vector = [1,2,3,4]
+    nn = knn(vector, matrix, k=2)
+    print nn
+    # assert nn == [0,2]
 
 if __name__ == "__main__":
     test_knn()
