@@ -4,6 +4,7 @@ from data_utils import utils as du
 import numpy as np
 import pandas as pd
 import csv
+import math
 
 # Load the vocabulary
 vocab = pd.read_table("data/lm/vocab.ptb.txt", header=None, sep="\s+",
@@ -30,7 +31,20 @@ def train_ngrams(dataset):
     unigram_counts = dict()
     token_count = 0
     ### YOUR CODE HERE
-    raise NotImplementedError
+    for sentence in dataset:
+        older = last = None
+
+        for current in sentence:
+            unigram_counts[current] = unigram_counts.get(current, 0) + 1
+            if last:
+                bigram_counts[(last, current)] = bigram_counts.get((last, current), 0) + 1
+            if older:
+                trigram_counts[(older, last, current)] = trigram_counts.get((older, last, current), 0) + 1
+
+            token_count += 1
+            older = last
+            last = current
+
     ### END YOUR CODE
     return trigram_counts, bigram_counts, unigram_counts, token_count
 
@@ -41,7 +55,34 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
     """
     perplexity = 0
     ### YOUR CODE HERE
-    raise NotImplementedError
+    sum_of_probs = 0
+    test_token_count = 0
+    for sentence in eval_dataset:
+        older = last = None
+
+        for current in sentence:
+            # calculating the probability
+            unigram_prob = float(unigram_counts.get(current, 0)) / train_token_count
+            if last and last in unigram_counts:
+                bigram_prob = float(bigram_counts.get((last, current), 0)) / unigram_counts[last]
+            else:
+                bigram_prob = 0
+            if older and (older, last) in bigram_counts:
+                trigram_prob = float(trigram_counts.get((older, last, current), 0)) / bigram_counts[(older, last)]
+            else:
+                trigram_prob = 0
+
+            # calculating the linear interpolation
+            prob = lambda1 * trigram_prob + lambda2 * bigram_prob + (1 - lambda1 - lambda2) * unigram_prob
+            if prob <= 0:
+                return float('Inf')
+            sum_of_probs += -math.log(prob, 2)
+
+            test_token_count += 1
+            older = last
+            last = current
+
+    perplexity = 2 ** (sum_of_probs / test_token_count)
     ### END YOUR CODE
     return perplexity
 
@@ -57,8 +98,17 @@ def test_ngram():
     print "#tokens: " + str(token_count)
     perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, 0.5, 0.4)
     print "#perplexity: " + str(perplexity)
-    ### YOUR CODE HERE
-    ### END YOUR CODE
+
+    dict_lambda1 = dict()
+    for lambda1 in np.arange(0,1,0.1):
+        dict_lambda2 = dict()
+        for lambda2 in np.arange(0,1-lambda1,0.1):
+            dict_lambda2[lambda2] = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts,
+                                                    token_count, lambda1, lambda2)
+        dict_lambda1[lambda1] = dict_lambda2
+    grid_search = pd.DataFrame(dict_lambda1)
+    print "#perplexity per Lambda1, Lambda2:"
+    print grid_search
 
 if __name__ == "__main__":
     test_ngram()
