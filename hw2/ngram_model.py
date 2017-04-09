@@ -48,6 +48,20 @@ def train_ngrams(dataset):
     ### END YOUR CODE
     return trigram_counts, bigram_counts, unigram_counts, token_count
 
+def calculate_probability(older, last, current, trigram_counts, bigram_counts, unigram_counts, train_token_count, lambda1, lambda2):
+    unigram_prob = float(unigram_counts.get(current, 0)) / train_token_count
+    if last and last in unigram_counts:
+        bigram_prob = float(bigram_counts.get((last, current), 0)) / unigram_counts[last]
+    else:
+        bigram_prob = 0
+    if older and (older, last) in bigram_counts:
+        trigram_prob = float(trigram_counts.get((older, last, current), 0)) / bigram_counts[(older, last)]
+    else:
+        trigram_prob = 0
+
+    # calculating the linear interpolation
+    return lambda1 * trigram_prob + lambda2 * bigram_prob + (1 - lambda1 - lambda2) * unigram_prob
+
 def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts, train_token_count, lambda1, lambda2):
     """
     Goes over an evaluation dataset and computes the perplexity for it with
@@ -61,21 +75,7 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
         older = last = None
 
         for current in sentence:
-            # calculating the probability
-            unigram_prob = float(unigram_counts.get(current, 0)) / train_token_count
-            if last and last in unigram_counts:
-                bigram_prob = float(bigram_counts.get((last, current), 0)) / unigram_counts[last]
-            else:
-                bigram_prob = 0
-            if older and (older, last) in bigram_counts:
-                trigram_prob = float(trigram_counts.get((older, last, current), 0)) / bigram_counts[(older, last)]
-            else:
-                trigram_prob = 0
-
-            # calculating the linear interpolation
-            prob = lambda1 * trigram_prob + lambda2 * bigram_prob + (1 - lambda1 - lambda2) * unigram_prob
-            if prob <= 0:
-                return float('Inf')
+            prob = calculate_probability(older, last, current, trigram_counts, bigram_counts, unigram_counts, train_token_count, lambda1, lambda2)
             sum_of_probs += -math.log(prob, 2)
 
             test_token_count += 1
@@ -85,6 +85,25 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
     perplexity = 2 ** (sum_of_probs / test_token_count)
     ### END YOUR CODE
     return perplexity
+
+def best_sentence(trigram_counts, bigram_counts, unigram_counts, train_token_count, lambda1, lambda2):
+    start_word = word_to_num['<s>']
+    sentence = [start_word] *2
+    last = older = start_word
+    while len(sentence) < 15:
+        max_word = None
+        max_prob = 0
+        for word in word_to_num.values():
+            prob = calculate_probability(older, last, word, trigram_counts, bigram_counts, unigram_counts, train_token_count, lambda1, lambda2)
+            if prob > max_prob:
+                max_prob = prob
+                max_word = word
+        sentence.append(max_word)
+        last = sentence[-2] # if len(sentence) >= 2 else None
+        older = sentence[-3] # if len(sentence) >= 3 else None
+
+    word_sentence = ' '.join([num_to_word[word] for word in sentence])
+    return word_sentence
 
 def test_ngram():
     """
@@ -96,7 +115,7 @@ def test_ngram():
     print "#bigrams: " + str(len(bigram_counts))
     print "#unigrams: " + str(len(unigram_counts))
     print "#tokens: " + str(token_count)
-    perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, 0.5, 0.4)
+    perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, 0.3, 0.5)
     print "#perplexity: " + str(perplexity)
 
     dict_lambda1 = dict()
@@ -109,6 +128,8 @@ def test_ngram():
     grid_search = pd.DataFrame(dict_lambda1)
     print "#perplexity per Lambda1, Lambda2:"
     print grid_search
+    # print "best sentence: "
+    # print best_sentence(trigram_counts, bigram_counts, unigram_counts, token_count, 0.3, 0.5)
 
 if __name__ == "__main__":
     test_ngram()
