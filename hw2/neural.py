@@ -28,7 +28,11 @@ def forward(data, label, params, dimensions):
 
     # Compute the probability
     ### YOUR CODE HERE: forward propagation
-    raise NotImplementedError
+    z = W1.dot(data) + b1
+    h = sigmoid(z)
+    theta = W2.dot(h) + b2
+    y_hat = softmax(theta)
+    return y_hat[label]
     ### END YOUR CODE
 
 def forward_backward_prop(data, labels, params, dimensions):
