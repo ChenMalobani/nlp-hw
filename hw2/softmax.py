@@ -29,16 +29,17 @@ def softmax(x):
     orig_shape = x.shape
 
     if len(x.shape) > 1:
-        # Matrix
-        max_indecies = np.amax(x, axis=1)
-        max_indecies = max_indecies.reshape(max_indecies.shape[0],1)
-        exponent = np.exp(x-max_indecies)
-        x = exponent/np.sum(exponent,axis=1)
+        tmp = np.max(x, axis = 1)
+        x -= tmp.reshape((x.shape[0], 1))
+        x = np.exp(x)
+        tmp = np.sum(x, axis = 1)
+        x /= tmp.reshape((x.shape[0], 1))
     else:
-        # Vector
-        max_index = np.amax(x)
-        exponent = np.exp(x-np.array([max_index]))
-        x = exponent/np.sum(exponent)
+        tmp = np.max(x)
+        x -= tmp
+        x = np.exp(x)
+        tmp = np.sum(x)
+        x /= tmp
 
     assert x.shape == orig_shape
     return x
