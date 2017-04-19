@@ -4,7 +4,6 @@ from data_utils import utils as du
 import numpy as np
 import pandas as pd
 import csv
-import math
 
 # Load the vocabulary
 vocab = pd.read_table("data/lm/vocab.ptb.txt", header=None, sep="\s+",
@@ -76,7 +75,7 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
             prob = lambda1 * trigram_prob + lambda2 * bigram_prob + (1 - lambda1 - lambda2) * unigram_prob
             if prob <= 0:
                 return float('Inf')
-            sum_of_probs += -math.log(prob, 2)
+            sum_of_probs -= np.log2(prob)
 
             test_token_count += 1
             older = last
