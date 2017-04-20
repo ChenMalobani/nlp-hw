@@ -12,7 +12,7 @@ from sgd import *
 
 VOCAB_EMBEDDING_PATH = "data/lm/vocab.embeddings.glove.txt"
 BATCH_SIZE = 50
-NUM_OF_SGD_ITERATIONS = 1000
+NUM_OF_SGD_ITERATIONS = 10000
 LEARNING_RATE = 0.3
 
 def load_vocab_embeddings(path=VOCAB_EMBEDDING_PATH):
@@ -82,8 +82,6 @@ def lm_wrapper(in_word_index, out_word_index, num_to_word_embedding, dimensions,
     labels = np.array(out_word_index)[random_indices]
     one_hot_labels = np.zeros((BATCH_SIZE, vocabsize))
     one_hot_labels[np.arange(BATCH_SIZE), labels] = 1
-    # pd.DataFrame(one_hot_labels).to_csv('sdsd.csv')
-    # print labels
     cost, grad = forward_backward_prop(data, one_hot_labels, params, dimensions)
     ### END YOUR CODE
 

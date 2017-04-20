@@ -28,8 +28,8 @@ def train_ngrams(dataset):
     trigram_counts = dict()
     bigram_counts = dict()
     unigram_counts = dict()
-    token_count = 0
     ### YOUR CODE HERE
+    start_word = dataset[0][0]
     for sentence in dataset:
         older = last = None
 
@@ -40,10 +40,10 @@ def train_ngrams(dataset):
             if older is not None:
                 trigram_counts[(older, last, current)] = trigram_counts.get((older, last, current), 0) + 1
 
-            token_count += 1
             older = last
             last = current
 
+    token_count = sum([unigram_counts[word] for word in unigram_counts.keys() if word != start_word])
     ### END YOUR CODE
     return trigram_counts, bigram_counts, unigram_counts, token_count
 
@@ -57,16 +57,17 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
     sum_of_probs = 0
     test_token_count = 0
     for sentence in eval_dataset:
-        older = last = None
+        older = sentence[0]
+        last = sentence[1]
 
-        for current in sentence:
+        for current in sentence[2:]:
             # calculating the probability
             unigram_prob = float(unigram_counts.get(current, 0)) / train_token_count
-            if last and last in unigram_counts:
+            if last in unigram_counts:
                 bigram_prob = float(bigram_counts.get((last, current), 0)) / unigram_counts[last]
             else:
                 bigram_prob = 0
-            if (older is not None) and ((older, last) in bigram_counts):
+            if (older, last) in bigram_counts:
                 trigram_prob = float(trigram_counts.get((older, last, current), 0)) / bigram_counts[(older, last)]
             else:
                 trigram_prob = 0
