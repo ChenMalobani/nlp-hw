@@ -80,7 +80,9 @@ def lm_wrapper(in_word_index, out_word_index, num_to_word_embedding, dimensions,
     random_indices = np.random.choice(num_of_examples, BATCH_SIZE)
     data = np.array(num_to_word_embedding)[np.array(in_word_index)[random_indices]]
     labels = np.array(out_word_index)[random_indices]
-    cost, grad = forward_backward_prop(data, labels, params, dimensions)
+    one_hot_labels = np.zeros((BATCH_SIZE, vocabsize))
+    one_hot_labels[np.arange(BATCH_SIZE), labels] = 1
+    cost, grad = forward_backward_prop(data, one_hot_labels, params, dimensions)
     ### END YOUR CODE
 
     cost /= BATCH_SIZE
@@ -99,9 +101,8 @@ def eval_neural_lm(eval_data_path):
     perplexity = 0
     ### YOUR CODE HERE
     sum_of_probs = 0
-    for in_word, out_word in zip(in_word_index, out_word_index):
+    for in_word, label in zip(in_word_index, out_word_index):
         data = num_to_word_embedding[in_word]
-        label = num_to_word_embedding[out_word]
         prediction = forward(data, label, params, dimensions)
         sum_of_probs -= np.log2(prediction)
 

@@ -30,7 +30,7 @@ def forward(data, label, params, dimensions):
     ### YOUR CODE HERE: forward propagation
     z = W1.dot(data) + b1
     h = sigmoid(z)
-    theta = W2.dot(h) + b2
+    theta = h.dot(W2) + b2
     y_hat = softmax(theta)
     return y_hat[label]
     ### END YOUR CODE
@@ -68,15 +68,13 @@ def forward_backward_prop(data, labels, params, dimensions):
     h = sigmoid(z)
     theta = h.dot(W2) + b2
     y_hat = softmax(theta)
-    one_hot_labels = np.zeros(y_hat.shape)
-    one_hot_labels[np.arange(len(y_hat)), labels] = 1
 
-    cost = -np.sum(np.log(one_hot_labels.dot(y_hat))) # cross entropy
+    cost = -np.sum(labels * np.log(y_hat)) # cross entropy
 
     ### END YOUR CODE
 
     ### YOUR CODE HERE: backward propagation
-    delta_1 = y_hat - one_hot_labels
+    delta_1 = y_hat - labels
     delta_2 = np.dot(delta_1, W2.transpose())
     delta_3 = np.multiply(delta_2, sigmoid_grad(h))
 
