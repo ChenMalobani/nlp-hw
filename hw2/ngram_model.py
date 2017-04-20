@@ -35,9 +35,9 @@ def train_ngrams(dataset):
 
         for current in sentence:
             unigram_counts[current] = unigram_counts.get(current, 0) + 1
-            if last:
+            if last is not None:
                 bigram_counts[(last, current)] = bigram_counts.get((last, current), 0) + 1
-            if older:
+            if older is not None:
                 trigram_counts[(older, last, current)] = trigram_counts.get((older, last, current), 0) + 1
 
             token_count += 1
@@ -66,7 +66,7 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
                 bigram_prob = float(bigram_counts.get((last, current), 0)) / unigram_counts[last]
             else:
                 bigram_prob = 0
-            if older and (older, last) in bigram_counts:
+            if (older is not None) and ((older, last) in bigram_counts):
                 trigram_prob = float(trigram_counts.get((older, last, current), 0)) / bigram_counts[(older, last)]
             else:
                 trigram_prob = 0

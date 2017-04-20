@@ -32,7 +32,7 @@ def forward(data, label, params, dimensions):
     h = sigmoid(z)
     theta = h.dot(W2) + b2
     y_hat = softmax(theta)
-    return y_hat[label]
+    return y_hat[0,label]
     ### END YOUR CODE
 
 def forward_backward_prop(data, labels, params, dimensions):
