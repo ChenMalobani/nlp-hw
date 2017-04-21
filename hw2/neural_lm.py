@@ -102,7 +102,7 @@ def eval_neural_lm(eval_data_path):
     ### YOUR CODE HERE
     sum_of_probs = 0
     for in_word, label in zip(in_word_index, out_word_index):
-        data = num_to_word_embedding[in_word]
+        data = np.array(num_to_word_embedding[in_word])
         prediction = forward(data, label, params, dimensions)
         sum_of_probs -= np.log2(prediction)
 

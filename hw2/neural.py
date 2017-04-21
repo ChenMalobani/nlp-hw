@@ -28,7 +28,7 @@ def forward(data, label, params, dimensions):
 
     # Compute the probability
     ### YOUR CODE HERE: forward propagation
-    z = W1.dot(data) + b1
+    z = data.dot(W1) + b1
     h = sigmoid(z)
     theta = h.dot(W2) + b2
     y_hat = softmax(theta)
@@ -69,7 +69,7 @@ def forward_backward_prop(data, labels, params, dimensions):
     theta = h.dot(W2) + b2
     y_hat = softmax(theta)
 
-    cost = -np.sum(labels * np.log(y_hat)) # cross entropy
+    cost = -np.sum(labels * np.log2(y_hat)) # cross entropy
 
     ### END YOUR CODE
 
@@ -122,7 +122,24 @@ def your_sanity_checks():
     """
     print "Running your sanity checks..."
     ### YOUR CODE HERE
-    #raise NotImplementedError
+    N = 20
+    dimensions = [10, 5, 10]
+    data = np.random.randn(N, dimensions[0])  # each row will be a datum
+    labels = np.zeros((N, dimensions[2]))
+    for i in xrange(N):
+        labels[i, random.randint(0, dimensions[2] - 1)] = 1
+
+    params = np.random.randn((dimensions[0] + 1) * dimensions[1] + (
+        dimensions[1] + 1) * dimensions[2], )
+
+    forward_cost = 0
+    for in_word, out_word in zip(data,labels):
+        label = list(out_word).index(1)
+        forward_cost -= np.log2(forward(in_word, label, params, dimensions))
+
+    for_back_cost, _ = forward_backward_prop(data, labels, params, dimensions)
+    assert abs(forward_cost - for_back_cost) < 0.00001
+    print "Yussss!!!"
     ### END YOUR CODE
 
 
