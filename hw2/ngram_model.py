@@ -43,7 +43,8 @@ def train_ngrams(dataset):
             older = last
             last = current
 
-    token_count = sum([unigram_counts[word] for word in unigram_counts.keys() if word != start_word])
+    unigram_counts[start_word] /= 2 # we only use it for the bigram probability
+    token_count = sum(unigram_counts.values()) - unigram_counts[start_word]
     ### END YOUR CODE
     return trigram_counts, bigram_counts, unigram_counts, token_count
 
@@ -74,8 +75,6 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
 
             # calculating the linear interpolation
             prob = lambda1 * trigram_prob + lambda2 * bigram_prob + (1 - lambda1 - lambda2) * unigram_prob
-            if prob <= 0:
-                return float('Inf')
             sum_of_probs -= np.log2(prob)
 
             test_token_count += 1
@@ -96,7 +95,7 @@ def test_ngram():
     print "#bigrams: " + str(len(bigram_counts))
     print "#unigrams: " + str(len(unigram_counts))
     print "#tokens: " + str(token_count)
-    perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, 0.5, 0.4)
+    perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, 0.5, 0.3)
     print "#perplexity: " + str(perplexity)
 
     dict_lambda1 = dict()
