@@ -95,7 +95,9 @@ def test_ngram():
     print "#bigrams: " + str(len(bigram_counts))
     print "#unigrams: " + str(len(unigram_counts))
     print "#tokens: " + str(token_count)
-    perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, 0.5, 0.3)
+    lambda1 = np.float64(0.4)
+    lambda2 = np.float64(0.5)
+    perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, lambda1, lambda2)
     print "#perplexity: " + str(perplexity)
 
     dict_lambda1 = dict()
