@@ -10,8 +10,7 @@ def most_frequent_train(train_data):
     word_to_tag = dict()
     for sentence in train_data:
         for tup in sentence:
-            word = tup[0]
-            tag = tup[1]
+            word, tag = tup
             if word not in word_to_tags:
                 word_to_tags[word] = dict()
             if tag not in word_to_tags[word]:
@@ -32,10 +31,8 @@ def most_frequent_eval(test_set, pred_tags):
     frequent_tags = dict()
     for sentence in test_set:
         for tup in sentence:
-            word = tup[0]
-            label = tup[1]
-            if word not in frequent_tags:
-                frequent_tags[word] = 0
+            word, label = tup
+            frequent_tags[word] = frequent_tags.get(word, 0) + 1
             if word in pred_tags:
                 if pred_tags[word] == label:
                     frequent_tags[word] += 1

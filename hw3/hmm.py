@@ -1,4 +1,5 @@
 from data import *
+import numpy as np
 
 def hmm_train(sents):
     """
@@ -8,7 +9,20 @@ def hmm_train(sents):
     total_tokens = 0
     q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts = {}, {}, {}, {}, {}
     ### YOUR CODE HERE
-    raise NotImplementedError
+    for sentence in sents:
+        older = last = None
+        for current in sentence:
+            q_uni_counts[current[1]] = q_uni_counts.get(current[1], 0) + 1
+            if last is not None:
+                q_bi_counts[(last[1], current[1])] = q_bi_counts.get((last[1], current[1]), 0) + 1
+            if older is not None:
+                q_tri_counts[(older[1], last[1], current[1])] = q_tri_counts.get((older[1], last[1], current[1]), 0) + 1
+            e_word_tag_counts[current] = e_word_tag_counts.get(current, 0) + 1
+            e_tag_counts[current[1]] = e_tag_counts.get(current[1], 0) + 1
+            older = last
+            last = current
+            total_tokens += 1
+
     ### END YOUR CODE
     return total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts
 
@@ -19,7 +33,11 @@ def hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_w
     """
     predicted_tags = [""] * (len(sent))
     ### YOUR CODE HERE
-    raise NotImplementedError
+    older = last = None
+    log_sum_of_emissions = 0
+    log_sum_of_transitions = 0
+    for current in sent:
+        log_sum_of_emissions += np.log(e_word_tag_counts*1.0/e_tag_counts)
     ### END YOUR CODE
     return predicted_tags
 
@@ -30,7 +48,7 @@ def hmm_eval(test_data, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e
     """
     acc_viterbi = 0, 0
     ### YOUR CODE HERE
-    raise NotImplementedError
+    #raise NotImplementedError
     ### END YOUR CODE
     return acc_viterbi
 
