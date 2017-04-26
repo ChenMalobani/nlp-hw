@@ -50,7 +50,11 @@ def replace_word(word):
         Replaces rare words with ctegories (numbers, dates, etc...)
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    try:
+        val = float(word)
+        return "NUM"
+    except:
+        pass
     ### END YOUR CODE
     return "UNK"
 

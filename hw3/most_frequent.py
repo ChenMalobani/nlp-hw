@@ -6,7 +6,21 @@ def most_frequent_train(train_data):
     Returns a dictionary that maps every word in the training set to its most frequent tag.
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    word_to_tags = dict()
+    word_to_tag = dict()
+    for sentence in train_data:
+        for tup in sentence:
+            word = tup[0]
+            tag = tup[1]
+            if word not in word_to_tags:
+                word_to_tags[word] = dict()
+            if tag not in word_to_tags[word]:
+                word_to_tags[word][tag] = 1
+            else:
+                word_to_tags[word][tag] += 1
+    for word in word_to_tags.keys():
+        word_to_tag[word] = max(word_to_tags[word], key=word_to_tags[word].get)
+    return word_to_tag
     ### END YOUR CODE
 
 def most_frequent_eval(test_set, pred_tags):
@@ -15,7 +29,17 @@ def most_frequent_eval(test_set, pred_tags):
     Returns an evaluation of the accuracy of the most frequent tagger.
     """
     ### YOUR CODE HERE
-    raise NotImplementedError
+    frequent_tags = dict()
+    for sentence in test_set:
+        for tup in sentence:
+            word = tup[0]
+            label = tup[1]
+            if word not in frequent_tags:
+                frequent_tags[word] = 0
+            if word in pred_tags:
+                if pred_tags[word] == label:
+                    frequent_tags[word] += 1
+    return max(frequent_tags, key=frequent_tags.get)
     ### END YOUR CODE
 
 if __name__ == "__main__":
