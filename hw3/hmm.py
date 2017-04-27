@@ -25,6 +25,7 @@ def hmm_train(sents):
     ### END YOUR CODE
     return total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts
 
+
 def log_parameters_estimation(total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts, lambda1=0.4, lambda2=0.4, lambda3=0.2):
     transitions = {}
     emissions = {}
@@ -35,6 +36,7 @@ def log_parameters_estimation(total_tokens, q_tri_counts, q_bi_counts, q_uni_cou
                    lambda3 * q_uni_counts.get(curr, 0)/ total_tokens)
     for word, tag in e_word_tag_counts.keys():
         emissions[(word, tag)] = e_word_tag_counts[(word, tag)] / e_tag_counts.get(tag, np.inf)
+        return transitions, emissions
 
 
 def hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts):
@@ -45,12 +47,30 @@ def hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_w
     predicted_tags = [""] * (len(sent))
     ### YOUR CODE HERE
     older  = ('DONTCARE','*')
-    log_sum_of_emissions = 0
-    log_sum_of_transitions = 0
-    pi ={}
-    pi[(0,older[1], older[1])] = 0
+    transitions, emissions = log_parameters_estimation(total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts)
+    tags = e_tag_counts.keys() + ['*']
+    pi = np.empty((len(sent)+1, len(tags), len(tags)))
+    bp = np.empty((len(sent)+1, len(tags), len(tags)))
+    pi[0,tags.index(older[1]), tags.index(older[1])] = 0
     for k in range(1, len(sent)+1):
-        pass
+        if k == 1:
+            s_k_before = ['*']
+        else:
+            s_k_before = tags
+        if k <= 2:
+            s_k_before_2 = ['*']
+        else:
+            s_k_before_2 = tags
+        for u in s_k_before:
+            for v in tags:
+                a = np.array([pi[k-1, tags.index(w), tags.index(u)] + transitions.get((v, w, u),0) + emissions.get((sent[k-1][0],v),0) for w in s_k_before_2])
+                pi[k, tags.index(u), tags.index(v)] = np.max(a)
+                bp[k, tags.index(u), tags.index(v)] = np.argmax(a)
+    predicted_tags[len(sent)-2] = tags[np.argmax(np.array([pi[len(sent) - 1, tags.index(m), tags.index(n)] + transitions.get(('STOP', m, n), 0) for m in tags for n in tags]))]
+    predicted_tags[len(sent)-1] = tags[np.argmax(np.array([pi[len(sent), tags.index(predicted_tags[len(sent)-2]), tags.index(m)] + transitions.get(('STOP', predicted_tags[len(sent)-2], m), 0) for m in tags]))]
+
+    for k in range(len(sent)-3, 0, -1):
+        predicted_tags[k] = tags[np.int(bp[k+2,tags.index(predicted_tags[k+1]),tags.index(predicted_tags[k+2])])]
     ### END YOUR CODE
     return predicted_tags
 
@@ -61,7 +81,12 @@ def hmm_eval(test_data, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e
     """
     acc_viterbi = 0, 0
     ### YOUR CODE HERE
-    #raise NotImplementedError
+    for sent in test_data:
+        predicted_tags = hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts)
+        label_tags = [tup[1] for tup in sent]
+        if label_tags == predicted_tags:
+            acc_viterbi[1] += 1
+        acc_viterbi[0] += 1
     ### END YOUR CODE
     return acc_viterbi
 
