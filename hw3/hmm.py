@@ -10,21 +10,32 @@ def hmm_train(sents):
     q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts = {}, {}, {}, {}, {}
     ### YOUR CODE HERE
     for sentence in sents:
-        older = last = None
+        before = last = ('DONTCARE','*')
         for current in sentence:
             q_uni_counts[current[1]] = q_uni_counts.get(current[1], 0) + 1
-            if last is not None:
-                q_bi_counts[(last[1], current[1])] = q_bi_counts.get((last[1], current[1]), 0) + 1
-            if older is not None:
-                q_tri_counts[(older[1], last[1], current[1])] = q_tri_counts.get((older[1], last[1], current[1]), 0) + 1
+            q_bi_counts[(current[1], before[1])] = q_bi_counts.get(( current[1], before[1]), 0) + 1
+            q_tri_counts[( current[1],before[1], last[1])] = q_tri_counts.get(( current[1],before[1], last[1]), 0) + 1
             e_word_tag_counts[current] = e_word_tag_counts.get(current, 0) + 1
             e_tag_counts[current[1]] = e_tag_counts.get(current[1], 0) + 1
-            older = last
-            last = current
+            last = before
+            before = current
             total_tokens += 1
+        q_tri_counts[('STOP', before[1],last[1])] = q_tri_counts.get(('STOP', before[1],last[1]), 0) + 1
 
     ### END YOUR CODE
     return total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts
+
+def log_parameters_estimation(total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts, lambda1=0.4, lambda2=0.4, lambda3=0.2):
+    transitions = {}
+    emissions = {}
+    for curr, before, last in q_tri_counts.keys():
+        transitions[(curr, before, last)] =\
+            np.log(lambda1 * q_tri_counts[(curr, before, last)] / q_bi_counts.get((before, last), np.inf) +
+                   lambda2 * q_bi_counts.get((curr, before), 0)/ q_uni_counts.get((before), np.inf) +
+                   lambda3 * q_uni_counts.get(curr, 0)/ total_tokens)
+    for word, tag in e_word_tag_counts.keys():
+        emissions[(word, tag)] = e_word_tag_counts[(word, tag)] / e_tag_counts.get(tag, np.inf)
+
 
 def hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts):
     """
@@ -33,11 +44,13 @@ def hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_w
     """
     predicted_tags = [""] * (len(sent))
     ### YOUR CODE HERE
-    older = last = None
+    older  = ('DONTCARE','*')
     log_sum_of_emissions = 0
     log_sum_of_transitions = 0
-    for current in sent:
-        log_sum_of_emissions += np.log(e_word_tag_counts*1.0/e_tag_counts)
+    pi ={}
+    pi[(0,older[1], older[1])] = 0
+    for k in range(1, len(sent)+1):
+        pass
     ### END YOUR CODE
     return predicted_tags
 
