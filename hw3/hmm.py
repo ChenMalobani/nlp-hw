@@ -35,7 +35,7 @@ def log_parameters_estimation(total_tokens, q_tri_counts, q_bi_counts, q_uni_cou
                    lambda2 * q_bi_counts.get((curr, before), 0)/ q_uni_counts.get((before), np.inf) +
                    lambda3 * q_uni_counts.get(curr, 0)/ total_tokens)
     for word, tag in e_word_tag_counts.keys():
-        emissions[(word, tag)] = e_word_tag_counts[(word, tag)] / e_tag_counts.get(tag, np.inf)
+        emissions[(word, tag)] = np.log(e_word_tag_counts[(word, tag)] / e_tag_counts.get(tag, np.inf))
         return transitions, emissions
 
 
@@ -66,7 +66,7 @@ def hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_w
                 a = np.array([pi[k-1, tags.index(w), tags.index(u)] + transitions.get((v, w, u),0) + emissions.get((sent[k-1][0],v),0) for w in s_k_before_2])
                 pi[k, tags.index(u), tags.index(v)] = np.max(a)
                 bp[k, tags.index(u), tags.index(v)] = np.argmax(a)
-    predicted_tags[len(sent)-2] = tags[np.argmax(np.array([pi[len(sent) - 1, tags.index(m), tags.index(n)] + transitions.get(('STOP', m, n), 0) for m in tags for n in tags]))]
+    predicted_tags[len(sent)-2] = tags[np.argmax(np.array([pi[len(sent), tags.index(m), tags.index(n)] + transitions.get(('STOP', m, n), 0) for m in tags for n in tags]))]
     predicted_tags[len(sent)-1] = tags[np.argmax(np.array([pi[len(sent), tags.index(predicted_tags[len(sent)-2]), tags.index(m)] + transitions.get(('STOP', predicted_tags[len(sent)-2], m), 0) for m in tags]))]
 
     for k in range(len(sent)-3, 0, -1):

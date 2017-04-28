@@ -29,14 +29,15 @@ def most_frequent_eval(test_set, pred_tags):
     """
     ### YOUR CODE HERE
     frequent_tags = dict()
+    cnt = 0
     for sentence in test_set:
         for tup in sentence:
             word, label = tup
-            frequent_tags[word] = frequent_tags.get(word, 0) + 1
             if word in pred_tags:
                 if pred_tags[word] == label:
-                    frequent_tags[word] += 1
-    return max(frequent_tags, key=frequent_tags.get)
+                    frequent_tags[word] = frequent_tags.get(word, 0) + 1
+            cnt += 1
+    return str(sum(frequent_tags.values())*1.0/cnt)
     ### END YOUR CODE
 
 if __name__ == "__main__":
