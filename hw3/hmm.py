@@ -62,7 +62,7 @@ def hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_w
     older = ('DONTCARE','*')
     # transitions, emissions = log_parameters_estimation(total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts)
     tags = e_tag_counts.keys() + ['*']
-    pi = np.empty((len(sent)+1, len(tags), len(tags)))
+    pi = np.ones((len(sent)+1, len(tags), len(tags))) * (-np.inf)
     bp = np.empty((len(sent)+1, len(tags), len(tags)))
     pi[0,tags.index(older[1]), tags.index(older[1])] = 0
     s_k_before = ['*']
@@ -72,11 +72,12 @@ def hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_w
             s_k_before = tags
         if k > 2:
             s_k_before_2 = tags
+        emissions = {v: calc_emission(e_word_tag_counts, e_tag_counts, sent[k - 1], v) for v in tags}
+        relevant = [v for v in tags if emissions[v] > -np.inf]
         for u in s_k_before:
-            for v in tags:
+            for v in relevant:
                 transitions = {w: calc_transition(total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, v, u, w) for w in s_k_before_2}
-                emission = calc_emission(e_word_tag_counts, e_tag_counts, sent[k-1][0], v)
-                a = np.array([pi[k-1, tags.index(w), tags.index(u)] + transitions[w] + emission for w in s_k_before_2])
+                a = np.array([pi[k-1, tags.index(w), tags.index(u)] + transitions[w] + emissions[v] for w in s_k_before_2])
                 pi[k, tags.index(u), tags.index(v)] = np.max(a)
                 bp[k, tags.index(u), tags.index(v)] = np.argmax(a)
 
@@ -112,9 +113,10 @@ def hmm_eval(test_data, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e
     acc_viterbi = 0
     total_token = 0
     ### YOUR CODE HERE
-    for sent in test_data:
-        predicted_tags = hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts)
+    for sent in test_data[:10]:
+        sent_words = [tup[0] for tup in sent]
         label_tags = [tup[1] for tup in sent]
+        predicted_tags = hmm_viterbi(sent_words, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts)
         compare = [(label_tags[i] == predicted_tags[i]) for i in range(len(sent))]
         acc_viterbi += sum(compare)
         total_token += len(compare)
