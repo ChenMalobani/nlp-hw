@@ -22,6 +22,18 @@ def extract_features(sentence, i):
     next_token = sentence[i + 1] if i < (len(sentence) - 1) else ('</s>', 'STOP')
     return extract_features_base(curr_word, next_token[0], prev_token[0], prevprev_token[0], prev_token[1], prevprev_token[1])
 
+def vectorize_features(vec, features):
+    """
+        Receives: feature dictionary
+        Rerutns: feature vector
+
+        Note: use this function only if you chose to use the sklearn solver!
+        This function prepares the feature vector for the sklearn solver,
+        use it for tags prediction.
+    """
+    example = [features]
+    return vec.transform(example)
+
 def create_examples(sents):
     print "building examples"
     examples = []
@@ -36,7 +48,7 @@ def create_examples(sents):
     return examples, labels
     print "done"
 
-def memm_greeedy(sent, logreg):
+def memm_greeedy(sent, logreg, vec):
     """
         Receives: a sentence to tag and the parameters learned by hmm
         Rerutns: predicted tags for the sentence
@@ -47,7 +59,7 @@ def memm_greeedy(sent, logreg):
     ### END YOUR CODE
     return predicted_tags
 
-def memm_viterbi(sent, logreg):
+def memm_viterbi(sent, logreg, vec):
     """
         Receives: a sentence to tag and the parameters learned by hmm
         Rerutns: predicted tags for the sentence
@@ -58,12 +70,12 @@ def memm_viterbi(sent, logreg):
     ### END YOUR CODE
     return predicted_tags
 
-def memm_eval(test_data, logreg):
+def memm_eval(test_data, logreg, vec):
     """
     Receives: test data set and the parameters learned by hmm
     Returns an evaluation of the accuracy of hmm & greedy hmm
     """
-    acc_viterbi, acc_greedy = 0, 0
+    acc_viterbi, acc_greedy = 0.0, 0.0
     ### YOUR CODE HERE
     raise NotImplementedError
     ### END YOUR CODE
@@ -119,12 +131,12 @@ if __name__ == "__main__":
     print "done, " + str(end - start) + " sec"
     #End of log linear model training
 
-    acc_viterbi, acc_greedy = memm_eval(dev_sents, logreg)
+    acc_viterbi, acc_greedy = memm_eval(dev_sents, logreg, vec)
     print "dev: acc memm greedy: " + acc_greedy
     print "dev: acc memm viterbi: " + acc_viterbi
     if os.path.exists('Penn_Treebank/test.gold.conll'):
         test_sents = read_conll_pos_file("Penn_Treebank/test.gold.conll")
         test_sents = preprocess_sent(vocab, test_sents)
-        acc_viterbi, acc_greedy = memm_eval(test_sents, logreg)
+        acc_viterbi, acc_greedy = memm_eval(test_sents, logreg, vec)
         print "test: acc memmm greedy: " + acc_greedy
         print "test: acc memmm viterbi: " + acc_viterbi
