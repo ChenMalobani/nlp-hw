@@ -1,3 +1,4 @@
+from __future__ import division
 from data import *
 from sklearn.feature_extraction import DictVectorizer
 from sklearn import linear_model
@@ -11,7 +12,13 @@ def extract_features_base(curr_word, next_word, prev_word, prevprev_word, prev_t
     features = {}
     features['word'] = curr_word
     ### YOUR CODE HERE
-    raise NotImplementedError
+    features['prev_word'] = prev_word
+    features['next_word'] = next_word
+    features['prevprev_word'] = prevprev_word
+    features['prev_tag'] = prev_tag
+    features['prevprev_prev_tag'] = prevprev_tag + prev_tag
+    features.update(dict(("prefix_" + str(i), curr_word[:i + 1]) for i in range(min(4, len(curr_word)))))
+    features.update(dict(("suffix_" + str(i), curr_word[-i - 1:]) for i in range(min(4, len(curr_word)))))
     ### END YOUR CODE
     return features
 
@@ -54,8 +61,13 @@ def memm_greeedy(sent, logreg, vec):
         Rerutns: predicted tags for the sentence
     """
     predicted_tags = [""] * (len(sent))
+    tagged_sent = [(word,0) for word in sent]
     ### YOUR CODE HERE
-    raise NotImplementedError
+    for i in xrange(len(sent)):
+        features = extract_features(tagged_sent, i)
+        transformed_features = vec.transform(features)
+        predicted = logreg.predict(transformed_features)
+        predicted_tags[i] = tagged_sent[i][1] = predicted
     ### END YOUR CODE
     return predicted_tags
 
@@ -77,7 +89,15 @@ def memm_eval(test_data, logreg, vec):
     """
     acc_viterbi, acc_greedy = 0.0, 0.0
     ### YOUR CODE HERE
-    raise NotImplementedError
+    total_token = 0
+    for sent in test_data:
+        sent_words = [tup[0] for tup in sent]
+        label_tags = [tup[1] for tup in sent]
+        predicted_tags = memm_greeedy(sent_words, logreg, vec)
+        compare = [(label_tags[i] == predicted_tags[i]) for i in range(len(sent))]
+        acc_greedy += sum(compare)
+        total_token += len(compare)
+    acc_greedy = acc_greedy / total_token
     ### END YOUR CODE
     return acc_viterbi, acc_greedy
 
