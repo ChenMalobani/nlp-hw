@@ -61,13 +61,15 @@ def memm_greeedy(sent, logreg, vec):
         Rerutns: predicted tags for the sentence
     """
     predicted_tags = [""] * (len(sent))
-    tagged_sent = [(word,0) for word in sent]
+    tagged_sent = [(word, None) for word in sent]
     ### YOUR CODE HERE
     for i in xrange(len(sent)):
         features = extract_features(tagged_sent, i)
         transformed_features = vec.transform(features)
-        predicted = logreg.predict(transformed_features)
-        predicted_tags[i] = tagged_sent[i][1] = predicted
+        predicted = logreg.predict(transformed_features)[0]
+        predicted_label = index_to_tag_dict[predicted]
+        predicted_tags[i] = predicted_label
+        tagged_sent[i] = sent[i], predicted_label
     ### END YOUR CODE
     return predicted_tags
 
@@ -93,13 +95,13 @@ def memm_eval(test_data, logreg, vec):
     for sent in test_data:
         sent_words = [tup[0] for tup in sent]
         label_tags = [tup[1] for tup in sent]
-        predicted_tags = memm_greeedy(sent_words, logreg, vec)
-        compare = [(label_tags[i] == predicted_tags[i]) for i in range(len(sent))]
+        greedy_predicted_tags = memm_greeedy(sent_words, logreg, vec)
+        compare = [(label_tags[i] == greedy_predicted_tags[i]) for i in range(len(sent))]
         acc_greedy += sum(compare)
         total_token += len(compare)
     acc_greedy = acc_greedy / total_token
     ### END YOUR CODE
-    return acc_viterbi, acc_greedy
+    return str(acc_viterbi), str(acc_greedy)
 
 if __name__ == "__main__":
     train_sents = read_conll_pos_file("Penn_Treebank/train.gold.conll")
@@ -133,20 +135,21 @@ if __name__ == "__main__":
     print "#example: " + str(num_dev_examples)
     print "Done"
 
-    all_examples = train_examples
-    all_examples.extend(dev_examples)
+    n = 400
+    all_examples = train_examples[:n]
+    all_examples.extend(dev_examples[:n])
 
     print "Vectorize examples"
     all_examples_vectorized = vec.fit_transform(all_examples)
-    train_examples_vectorized = all_examples_vectorized[:num_train_examples]
-    dev_examples_vectorized = all_examples_vectorized[num_train_examples:]
+    train_examples_vectorized = all_examples_vectorized[:n]
+    dev_examples_vectorized = all_examples_vectorized[n:]
     print "Done"
 
     logreg = linear_model.LogisticRegression(
         multi_class='multinomial', max_iter=128, solver='lbfgs', C=100000, verbose=1)
     print "Fitting..."
     start = time.time()
-    logreg.fit(train_examples_vectorized, train_labels)
+    logreg.fit(train_examples_vectorized, train_labels[:n])
     end = time.time()
     print "done, " + str(end - start) + " sec"
     #End of log linear model training
