@@ -1,4 +1,6 @@
 import os
+import datetime
+
 MIN_FREQ = 3
 def invert_dict(d):
     res = {}
@@ -50,11 +52,34 @@ def replace_word(word):
         Replaces rare words with ctegories (numbers, dates, etc...)
     """
     ### YOUR CODE HERE
+    # for numbers:
     try:
         val = float(word)
         return "NUM"
     except:
         pass
+    # for dates:
+    try:
+        datetime.datetime.strptime(word, '%Y-%m-%d')
+        return "DAT"
+    except:
+        pass
+    try:
+        datetime.datetime.strptime(word, '%m-%d-%Y')
+        return "DAT"
+    except:
+        pass
+    try:
+        datetime.datetime.strptime(word, '%d-%m-%Y')
+        return "DAT"
+    except:
+        pass
+    try:
+        datetime.datetime.strptime(word, '%Y-%d-%m')
+        return "DAT"
+    except:
+        pass
+
     ### END YOUR CODE
     return "UNK"
 
