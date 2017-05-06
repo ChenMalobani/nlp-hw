@@ -74,12 +74,10 @@ def replace_word(word):
         return "DAT"
     except:
         pass
-    try:
-        datetime.datetime.strptime(word, '%Y-%d-%m')
-        return "DAT"
-    except:
-        pass
-
+    if "%" in word:
+        return "PRT"
+    if word.isupper():
+        return "CAP"
     ### END YOUR CODE
     return "UNK"
 
