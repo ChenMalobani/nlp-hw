@@ -49,8 +49,7 @@ def hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_w
     """
     predicted_tags = [""] * (len(sent))
     ### YOUR CODE HERE
-    older = ('DONTCARE', '*')
-    # transitions, emissions = log_parameters_estimation(total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts,e_tag_counts)
+    older = ('<s>', '*')
     tags = e_tag_counts.keys() + ['*']
     pi = np.ones((len(sent) + 1, len(tags), len(tags))) * (-np.inf)
     bp = np.empty((len(sent) + 1, len(tags), len(tags)))
@@ -58,7 +57,7 @@ def hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_w
     s_k_before = ['*']
     s_k_before_2 = ['*']
     for k in range(1, len(sent) + 1):
-        if k > 2:
+        if k == 3:
             s_k_before_2 = tags
         v_emissions = {v: calc_emission(e_word_tag_counts, e_tag_counts, sent[k - 1], v) for v in tags}
         v_relevant = [v for v in tags if v_emissions[v] > -np.inf]
@@ -73,21 +72,13 @@ def hmm_viterbi(sent, total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_w
         s_k_before = v_relevant[:]
 
     # Prediction tags for the last 2 words in sent
-    transitions = {(u, v): calc_transition(total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, 'STOP', u, v)
-                   for u in tags for v in tags}
+    transitions = np.array([[calc_transition(total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, 'STOP', tags[i], tags[j])
+                   for i in range(len(tags))] for j in range(len(tags))])
 
-    best_val = pi[len(sent), 0, 0] + transitions[(tags[0], tags[0])]
-    tag_n, tag_n_before = tags[0], tags[0]
-    for u in tags:
-        for v in tags:
-            curr_val = pi[len(sent), tags.index(u), tags.index(v)] + transitions[v, u]
-            if curr_val > best_val:
-                tag_n_before = u
-                tag_n = v
-                best_val = curr_val
-
-    predicted_tags[len(sent) - 2] = tag_n_before
-    predicted_tags[len(sent) - 1] = tag_n
+    a = pi[len(sent)] + transitions
+    tag_n_before, tag_n = np.unravel_index(np.argmax(a), a.shape)
+    predicted_tags[len(sent) - 2] = tags[tag_n_before]
+    predicted_tags[len(sent) - 1] = tags[tag_n]
 
     # Prediction tags for all other words in sent
     for k in range(len(sent) - 3, -1, -1):
