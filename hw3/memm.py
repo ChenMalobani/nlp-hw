@@ -5,6 +5,7 @@ from sklearn import linear_model
 import time
 import numpy as np
 from copy import copy
+from collections import defaultdict
 
 def extract_features_base(curr_word, next_word, prev_word, prevprev_word, prev_tag, prevprev_tag):
     """
@@ -76,6 +77,22 @@ def memm_greeedy(sent, logreg, vec):
     ### END YOUR CODE
     return predicted_tags
 
+def create_all_examples(feature_dict, tags_bank):
+    examples = list()
+    example_id = dict()
+    id = 0
+
+    for (u, w) in tags_bank:
+        feature_dict['prev_tag'] = u
+        feature_dict['prevprev_tag'] = w
+        feature_dict['prevprev_prev_tag'] = w + '_' + u
+        examples.append(copy(feature_dict))
+        example_id[(u, w)] = id
+        id += 1
+
+    return examples, example_id
+
+
 def memm_viterbi(sent, logreg, vec):
     """
         Receives: a sentence to tag and the parameters learned by hmm
@@ -83,52 +100,36 @@ def memm_viterbi(sent, logreg, vec):
     """
     predicted_tags = [""] * (len(sent))
     ### YOUR CODE HERE
+    tags = tagset.keys()
     tagged_sent = [(word, '*') for word in sent]
-    tags = sorted(tagset.keys(), key=lambda x: tagset[x])
-    pi = np.ones((len(sent) + 1, len(tagset), len(tagset))) * (-np.inf)
-    bp = np.empty((len(sent) + 1, len(tagset), len(tagset)))
-    pi[0, tagset['*'], tagset['*']] = 0
+    beam = 100
+    pi = defaultdict(lambda: defaultdict(dict))
 
-    k = 1
-    features = extract_features(tagged_sent, k-1)
-    transformed_examples = vec.transform(features)
-    predicted = logreg.predict_log_proba(transformed_examples)
-    pi[k, tagset['*']] = np.append(predicted, -np.inf)  # append '*' label
-    bp[k, tagset['*']] = tagset['*']
+    pi[0][('*', '*')] = 0
+    for i in range(1, len(sent) + 1):
+        features = extract_features(tagged_sent, i - 1)
+        examples, example_id = create_all_examples(features, pi[i-1])
+        examples_vectorized = vec.transform(examples)
+        probs = logreg.predict_log_proba(examples_vectorized)
 
-    s_k_before_2 = ['*']
-    for k in range(2, len(sent) + 1):
-        if k == 3:
-            s_k_before_2 = tags
+        for v in tags:
+            max_prob = -np.inf
+            for (u, w) in pi[i - 1]:
+                a = pi[i - 1][(u, w)] + probs[example_id[(u, w)]][tagset[v]]
+                if a > max_prob:
+                    if len(pi[i]) < beam:
+                        pi[i][(v, u)] = a
+                    else:
+                        min_key = min(pi[i], key=pi[i].get)
+                        pi[i].pop(min_key)
+                        pi[i][(v, u)] = a
+                    max_prob = a
 
-        for u in tags:
-            examples = []
-            tagged_sent[k - 2] = (sent[k - 2], u)
-            features = extract_features(tagged_sent, k - 1)
-            for w in s_k_before_2:
-                features['prevprev_tag'] = w
-                features['prevprev_prev_tag'] = w + '_' + u
-                examples.append(copy(features))
-
-            transformed_examples = vec.transform(examples)
-            predicted = logreg.predict_log_proba(transformed_examples)
-
-            if k == 2:
-                predicted = np.tile(predicted, (len(tagset),1))
-            predicted = np.append(predicted, np.ones((predicted.shape[0],1)) * (-np.inf), axis=1)  # append '*' label
-            a = pi[k - 1] + predicted
-            pi[k, tagset[u]] = np.max(a, axis=0)
-            bp[k, tagset[u]] = np.argmax(a, axis=0)
-
-    # Prediction tags for the last 2 words in sent
-    tag_n_before, tag_n = np.unravel_index(np.argmax(pi[len(sent)]), pi[len(sent)].shape)
-    predicted_tags[len(sent) - 2] = tag_n_before
-    predicted_tags[len(sent) - 1] = tag_n
-
-    # Prediction tags for all other words in sent
+    best_v, best_u = max(pi[len(sent)], key=pi[len(sent)].get)
+    predicted_tags[len(sent) - 1] = best_v
+    predicted_tags[len(sent) - 2] = best_u
     for k in range(len(sent) - 3, -1, -1):
-        predicted_tags[k] = tags[
-            np.int(bp[k + 3, tags.index(predicted_tags[k + 1]), tags.index(predicted_tags[k + 2])])]
+        predicted_tags[k] = max(pi[k + 2], key=pi[k + 2].get)[1]
     ### END YOUR CODE
     return predicted_tags
 
@@ -153,16 +154,14 @@ def memm_eval(test_data, logreg, vec):
     acc_greedy = acc_greedy / total_token
     acc_viterbi = acc_viterbi / total_token
     ### END YOUR CODE
-    return str(acc_viterbi), str(acc_greedy)
+    return '{:2.1f}%'.format(acc_viterbi*100), '{:2.1f}%'.format(acc_greedy*100)
 
 if __name__ == "__main__":
     train_sents = read_conll_pos_file("Penn_Treebank/train.gold.conll")
     dev_sents = read_conll_pos_file("Penn_Treebank/dev.gold.conll")
 
-    n_train = 800
-    n_dev = 5
-    train_sents = train_sents[:n_train]
-    dev_sents = dev_sents[:n_dev]
+    train_sents = train_sents
+    dev_sents = dev_sents
 
     vocab = compute_vocab_count(train_sents)
     train_sents = preprocess_sent(vocab, train_sents)
@@ -178,7 +177,7 @@ if __name__ == "__main__":
             if tag not in tagset:
                 tagset[tag] = curr_tag_index
                 curr_tag_index += 1
-    tagset['*'] = curr_tag_index
+
     index_to_tag_dict = invert_dict(tagset)
     vec = DictVectorizer()
     print "Create train examples"
@@ -203,7 +202,7 @@ if __name__ == "__main__":
     print "Done"
 
     logreg = linear_model.LogisticRegression(
-        multi_class='multinomial', max_iter=10, solver='lbfgs', C=100000, verbose=1)
+        multi_class='multinomial', max_iter=128, solver='lbfgs', C=100000, verbose=1)
     print "Fitting..."
     start = time.time()
     logreg.fit(train_examples_vectorized, train_labels)
