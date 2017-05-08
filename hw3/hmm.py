@@ -28,8 +28,8 @@ def hmm_train(sents):
     return total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, e_word_tag_counts, e_tag_counts
 
 
-def calc_transition(total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, curr, before, last, lambda1=0.4,
-                    lambda2=0.4):
+def calc_transition(total_tokens, q_tri_counts, q_bi_counts, q_uni_counts, curr, before, last, lambda1=0.6,
+                    lambda2=0.3):
     lambda3 = 1 - lambda1 - lambda2
     transition = \
         np.log(lambda1 * q_tri_counts.get((curr, before, last), 0) / q_bi_counts.get((before, last), np.inf) +
