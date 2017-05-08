@@ -154,7 +154,7 @@ def memm_eval(test_data, logreg, vec):
     acc_greedy = acc_greedy / total_token
     acc_viterbi = acc_viterbi / total_token
     ### END YOUR CODE
-    return '{:2.1f}%'.format(acc_viterbi*100), '{:2.1f}%'.format(acc_greedy*100)
+    return '{:2.3f}%'.format(acc_viterbi*100), '{:2.3f}%'.format(acc_greedy*100)
 
 if __name__ == "__main__":
     train_sents = read_conll_pos_file("Penn_Treebank/train.gold.conll")
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     print "Done"
 
     logreg = linear_model.LogisticRegression(
-        multi_class='multinomial', max_iter=128, solver='lbfgs', C=100000, verbose=1)
+        multi_class='multinomial', max_iter=1000, solver='lbfgs', C=100000, verbose=1)
     print "Fitting..."
     start = time.time()
     logreg.fit(train_examples_vectorized, train_labels)
