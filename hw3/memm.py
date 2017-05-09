@@ -202,7 +202,7 @@ if __name__ == "__main__":
     print "Done"
 
     logreg = linear_model.LogisticRegression(
-        multi_class='multinomial', max_iter=1000, solver='lbfgs', C=100000, verbose=1)
+        multi_class='multinomial', max_iter=200, solver='lbfgs', C=100000, verbose=1)
     print "Fitting..."
     start = time.time()
     logreg.fit(train_examples_vectorized, train_labels)
