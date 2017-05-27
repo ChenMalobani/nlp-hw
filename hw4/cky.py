@@ -15,7 +15,7 @@ def load_sents_to_parse(filename):
 
 def get_log_probability(pcfg,symbol,token):
     for item in pcfg._rules[symbol]:
-        if item[0][0] == token:
+        if item[0][0] == token and pcfg.is_preterminal(item[0]):
             return np.log(item[1] / pcfg._sums[symbol])
     return -np.inf
 
@@ -36,30 +36,30 @@ def cky(pcfg, sent):
         for rule in pcfg._rules.keys():
             pi[i][i][rule] = get_log_probability(pcfg,rule,tokens[i-1])
 
-    for i in range(1, len(tokens)):
-        for l in range(1, len(tokens)):
+    for l in range(1,len(tokens)):
+        for i in range(1,len(tokens)-l+1):
             j = i + l
-            max_val = -np.inf
-            max_ind = None
             for x in pcfg._rules.keys():
+                max_val = -np.inf
+                max_ind = None
                 sum_weight = pcfg._sums[x]
                 for rhs in pcfg._rules[x]:
                     if not pcfg.is_preterminal(rhs[0]):
+                        y, z = rhs[0]
                         for s in range(i, j):
-                            rule = rhs[0]
-                            y, z = rule
                             prob = np.log(rhs[1]/sum_weight)
-                            val = prob + pi[i][s].get(y,-np.inf) + pi[s+1][j].get(z,-np.inf)
+                            val = prob + pi.get(i,{}).get(s,{}).get(y,-np.inf) + pi.get(s+1,{}).get(j,{}).get(z,-np.inf)
                             if val > max_val:
                                 max_val = val
                                 max_ind = (y,z,s)
                 pi[i][j][x] = max_val
                 bp[i][j][x] = max_ind
 
-        if pi[0][len(sent)-1]["ROOT"] == -np.inf:
-            return "FAILED TO PARSE!"
+    if pi[1][len(tokens)]["ROOT"] != -np.inf:
+        return get_cky_parse_tree(sent, bp, 1, len(sent), "ROOT")
+        ### END YOUR CODE
 
-    return get_cky_parse_tree(sent, bp, 0, len(sent) - 1, "ROOT")
+    return "FAILED TO PARSE!"
 if __name__ == '__main__':
     import sys
     pcfg = PCFG.from_file_assert_cnf(sys.argv[1])
