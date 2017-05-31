@@ -19,13 +19,13 @@ def get_log_probability(pcfg,symbol,token):
             return np.log(item[1] / pcfg._sums[symbol])
     return -np.inf
 
-def get_cky_parse_tree(sent, bp, i, j, symbol):
+def get_cky_parse_tree(tokens, bp, i, j, symbol):
     if i == j:
-        return "(" + symbol + " " + sent[i] + ")"
+        return "(" + symbol + " " + tokens[i - 1] + ")"
     left, right, split_index = bp[i][j][symbol]
 
-    return "(" + symbol + " " + get_cky_parse_tree(sent, bp, i, split_index, left) + " " \
-                        + get_cky_parse_tree(sent, bp, split_index + 1, j, right) + ")"
+    return "(" + symbol + " " + get_cky_parse_tree(tokens, bp, i, split_index, left) + " " \
+                        + get_cky_parse_tree(tokens, bp, split_index + 1, j, right) + ")"
 
 def cky(pcfg, sent):
     ### YOUR CODE HERE
@@ -56,7 +56,7 @@ def cky(pcfg, sent):
                 bp[i][j][x] = max_ind
 
     if pi[1][len(tokens)]["ROOT"] != -np.inf:
-        return get_cky_parse_tree(sent, bp, 1, len(sent), "ROOT")
+        return get_cky_parse_tree(tokens, bp, 1, len(tokens), "ROOT")
         ### END YOUR CODE
 
     return "FAILED TO PARSE!"
